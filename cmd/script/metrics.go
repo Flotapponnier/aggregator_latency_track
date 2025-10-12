@@ -12,7 +12,21 @@ import (
 var (
 	metricsRegistry = make(map[string]*AggregatorMetrics)
 	metricsLock     sync.Mutex
+
+	// Combined metric to track all aggregators in one place for easy comparison
+	allAggregatorLatency *prometheus.GaugeVec
 )
+
+func init() {
+	allAggregatorLatency = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "all_aggregator_latency_milliseconds",
+			Help: "Latency in milliseconds for all aggregators by blockchain and source",
+		},
+		[]string{"aggregator", "chain"},
+	)
+	prometheus.MustRegister(allAggregatorLatency)
+}
 
 type AggregatorMetrics struct {
 	Latency *prometheus.GaugeVec
@@ -63,6 +77,9 @@ func GetOrCreateMetrics(aggregator string) *AggregatorMetrics {
 func RecordLatency(aggregator string, chain string, latencyMs float64) {
 	metrics := GetOrCreateMetrics(aggregator)
 	metrics.Latency.WithLabelValues(chain).Set(latencyMs)
+
+	// Also record to the combined metric for easy comparison
+	allAggregatorLatency.WithLabelValues(aggregator, chain).Set(latencyMs)
 }
 
 func RecordTrade(aggregator string, chain string, tradeType string, volumeUSD float64) {

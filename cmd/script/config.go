@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	CoinGeckoAPIKey string
+	MobulaAPIKey    string
 }
 
 func loadEnv() (*Config, error) {
@@ -36,6 +37,8 @@ func loadEnv() (*Config, error) {
 		switch key {
 		case "COINGECKO_API_KEY":
 			config.CoinGeckoAPIKey = value
+		case "MOBULA_API_KEY":
+			config.MobulaAPIKey = value
 		}
 	}
 

@@ -38,11 +38,18 @@ func main() {
 		}
 	}()
 
-	// To add a new aggregator, copy the block below and call your monitor function:
+	// CoinGecko monitor
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		runGeckoTerminalMonitor(config, stopChan)
+	}()
+
+	// Mobula monitor
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runMobulaMonitor(config, stopChan)
 	}()
 
 	<-sigChan

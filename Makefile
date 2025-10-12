@@ -66,7 +66,10 @@ down:
 	fi
 	@echo "  → Killing all latency_monitor processes..."
 	@pkill -9 latency_monitor 2>/dev/null || true
-	@docker-compose down
+	@echo "  → Stopping Docker containers..."
+	@docker-compose down 2>/dev/null || true
+	@docker stop prometheus grafana 2>/dev/null || true
+	@docker rm prometheus grafana 2>/dev/null || true
 	@echo "✓ All services stopped"
 
 .PHONY: stop
