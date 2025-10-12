@@ -1,0 +1,12 @@
+# Binaries
+latency_monitor
+
+# Logs
+monitor.log
+monitor.pid
+
+# Environment
+.env
+
+# Dependencies
+go.sum
