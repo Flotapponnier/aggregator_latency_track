@@ -14,6 +14,9 @@ Create a `.env` file in the root directory with the following variables:
 # CoinGecko API Key (required for CoinGecko monitor)
 COINGECKO_API_KEY=your_coingecko_api_key_here
 
+# Mobula API Key (required for Mobula monitor)
+MOBULA_API_KEY=your_mobula_api_key_here
+
 # Add more API keys here as you integrate additional aggregators:
 # DEXSCREENER_API_KEY=your_dexscreener_key
 # MORALIS_API_KEY=your_moralis_key
@@ -59,7 +62,8 @@ cd aggregator_latency_monitor
 
 # Create .env file
 cat > .env << EOF
-COINGECKO_API_KEY=your_api_key_here
+COINGECKO_API_KEY=your_coingecko_api_key_here
+MOBULA_API_KEY=your_mobula_api_key_here
 EOF
 ```
 
@@ -93,29 +97,30 @@ The **"Aggregator Latency Monitor"** dashboard loads automatically in Grafana!
 
 ### Main Panels
 
-1. **📈 Latency Graph (Top)**
-   - Real-time line chart showing lag for all chains
-   - 30-minute rolling window
-   - Color-coded by chain (Solana, BNB, Base)
+The Grafana dashboard contains 3 main panels to compare aggregator performance:
 
-2. **📊 Current Lag Stats (Middle Row)**
-   - 3 large stat panels showing current lag per chain
-   - Real-time latency values in milliseconds
+1. **CoinGecko - Indexation Lag by Chain**
+   - Shows CoinGecko latency for Solana, BNB, and Base
+   - Typical lag: ~4000-8000ms
+   - Measurement: Time from on-chain trade to WebSocket reception
 
-3. **📉 Trade Rate (Bottom Left)**
-   - Trades per second by chain and type (buy/sell)
-   - Shows activity level
+2. **Mobula - Indexation Lag by Chain**
+   - Shows Mobula latency for Solana, BNB, and Base
+   - Typical lag: ~1000-2000ms
+   - Measurement: Time from on-chain trade to WebSocket reception
 
-4. **💰 Trade Volume (Bottom Right)**
-   - Last trade volume in USD
-   - Helps correlate lag with transaction size
+3. **All Aggregators Comparison - Latency by Chain**
+   - Overlays both aggregators on the same graph
+   - CoinGecko in blue, Mobula in orange
+   - Easy side-by-side comparison
+   - Legend shows mean, last value, max, and min for each series
 
 ### Dashboard Controls
 
 - **🔄 Auto-refresh**: Every 5 seconds
 - **🕐 Time Range**: Adjustable (default: last 30 minutes)
 - **🔍 Zoom**: Click and drag on any graph
-- **📌 Legend**: Click to show/hide specific chains
+- **📌 Legend**: Click series name to show/hide specific chains or aggregators
 
 ---
 
@@ -320,7 +325,8 @@ aggregator_latency_monitor/
 │   ├── main.go                    # Entry point
 │   ├── config.go                  # .env loader
 │   ├── metrics.go                 # Prometheus metrics
-│   └── geckoterminal_monitor.go   # CoinGecko monitor
+│   ├── geckoterminal_monitor.go   # CoinGecko monitor
+│   └── mobula_monitor.go          # Mobula monitor
 │
 ├── monitoring/
 │   ├── prometheus.yml             # Prometheus config
@@ -466,6 +472,7 @@ coingecko_latency_milliseconds{chain="solana"}
 | Aggregator | Chains | Method | Status |
 |------------|--------|--------|--------|
 | **CoinGecko** | Solana, BNB, Base | WebSocket | ✅ Active |
+| **Mobula** | Solana, BNB, Base | WebSocket | ✅ Active |
 
 ---
 

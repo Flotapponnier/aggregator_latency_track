@@ -116,7 +116,7 @@ func handleCoinGeckoWebSocketMessages(conn *websocket.Conn, config *Config) {
 			return
 		}
 
-		receiveTime := time.Now()
+		receiveTime := time.Now().UTC()
 
 		var trade TradeData
 		if err := json.Unmarshal(messageBytes, &trade); err != nil {
@@ -158,7 +158,6 @@ func handleCoinGeckoWebSocketMessages(conn *websocket.Conn, config *Config) {
 		)
 
 		RecordLatency("coingecko", chainName, float64(lagMs))
-		RecordTrade("coingecko", chainName, tradeType, trade.Vo)
 	}
 }
 

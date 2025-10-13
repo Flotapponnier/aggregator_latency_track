@@ -107,7 +107,7 @@ func getChainNameForMobula(blockchainName string) string {
 		return "solana"
 	case "Base", "base":
 		return "base"
-	case "BSC", "BNB Smart Chain", "bnb":
+	case "BSC", "BNB Smart Chain", "BNB Smart Chain (BEP20)", "bnb":
 		return "bnb"
 	default:
 		return blockchainName
@@ -123,13 +123,11 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 			return
 		}
 
-		receiveTime := time.Now()
+		receiveTime := time.Now().UTC()
 		messageCount++
 
-		// Debug: Print first few raw messages
-		if messageCount <= 5 {
-			fmt.Printf("[MOBULA DEBUG] Message #%d: %s\n", messageCount, string(messageBytes))
-		}
+		// Debug: Print raw messages (disabled)
+		// fmt.Printf("[MOBULA DEBUG] Message #%d: %s\n", messageCount, string(messageBytes))
 
 		var trade MobulaTradeData
 		if err := json.Unmarshal(messageBytes, &trade); err != nil {
@@ -147,20 +145,21 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 			continue
 		}
 
+		// Mesurer comme CoinGecko: NOW - timestamp_onchain
+		// D'après la doc Mobula: date = timestamp du trade on-chain
 		lagMs := calculateMobulaLag(trade.Date, receiveTime)
 
 		chainName := getChainNameForMobula(trade.Blockchain)
 		timestamp := receiveTime.Format("2006-01-02 15:04:05")
-
 		tradeTime := time.UnixMilli(trade.Date).Format("15:04:05.000")
-
-		fmt.Printf("\n[DEBUG] Raw timestamp: %d | Trade time parsed: %s | Receive time: %s | Lag: %dms\n",
-			trade.Date, tradeTime, timestamp, lagMs)
 
 		txHashShort := trade.Hash
 		if len(txHashShort) > 8 {
 			txHashShort = txHashShort[:8]
 		}
+
+		fmt.Printf("\n[DEBUG] Raw timestamp: %d | Trade time parsed: %s | Receive time: %s | Lag: %dms\n",
+			trade.Date, tradeTime, timestamp, lagMs)
 
 		fmt.Printf("[MOBULA][%s][%s] New fast trade! Tx: %s... | Type: %s | Volume: $%.2f | Trade time: %s | Lag: %dms\n",
 			timestamp,
@@ -173,7 +172,6 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 		)
 
 		RecordLatency("mobula", chainName, float64(lagMs))
-		RecordTrade("mobula", chainName, trade.Type, trade.TokenAmountUsd)
 	}
 }
 
