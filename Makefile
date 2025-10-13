@@ -25,8 +25,15 @@ help:
 	@echo "  Metrics:    http://localhost:2112/metrics"
 	@echo ""
 
+.PHONY: deps
+deps:
+	@echo "📦 Downloading dependencies..."
+	@go mod download
+	@echo "✓ Dependencies ready"
+	@echo ""
+
 .PHONY: build
-build:
+build: deps
 	@echo "🔨 Building $(BINARY_NAME)..."
 	@go build -o $(BINARY_NAME) $(GO_FILES)
 	@echo "✓ Build complete: $(BINARY_NAME)"
