@@ -17,6 +17,9 @@ COINGECKO_API_KEY=your_coingecko_api_key_here
 # Mobula API Key (required for Mobula monitor)
 MOBULA_API_KEY=your_mobula_api_key_here
 
+# Codex API Key (required for Codex monitor)
+CODEX_API_KEY=your_codex_api_key_here
+
 # Add more API keys here as you integrate additional aggregators:
 # DEXSCREENER_API_KEY=your_dexscreener_key
 # MORALIS_API_KEY=your_moralis_key
@@ -64,6 +67,7 @@ cd aggregator_latency_monitor
 cat > .env << EOF
 COINGECKO_API_KEY=your_coingecko_api_key_here
 MOBULA_API_KEY=your_mobula_api_key_here
+CODEX_API_KEY=your_codex_api_key_here
 EOF
 ```
 
@@ -97,7 +101,7 @@ The **"Aggregator Latency Monitor"** dashboard loads automatically in Grafana!
 
 ### Main Panels
 
-The Grafana dashboard contains 3 main panels to compare aggregator performance:
+The Grafana dashboard contains 4 main panels to compare aggregator performance:
 
 1. **CoinGecko - Indexation Lag by Chain**
    - Shows CoinGecko latency for Solana, BNB, and Base
@@ -109,9 +113,14 @@ The Grafana dashboard contains 3 main panels to compare aggregator performance:
    - Typical lag: ~1000-2000ms
    - Measurement: Time from on-chain trade to WebSocket reception
 
-3. **All Aggregators Comparison - Latency by Chain**
-   - Overlays both aggregators on the same graph
-   - CoinGecko in blue, Mobula in orange
+3. **Codex - Indexation Lag by Chain**
+   - Shows Codex latency for Solana, BNB, and Base
+   - Typical lag: ~2000-3000ms
+   - Measurement: Time from on-chain trade to GraphQL WebSocket reception
+
+4. **All Aggregators Comparison - Latency by Chain**
+   - Overlays all aggregators on the same graph
+   - CoinGecko in blue, Mobula in orange, Codex in green
    - Easy side-by-side comparison
    - Legend shows mean, last value, max, and min for each series
 
@@ -326,7 +335,8 @@ aggregator_latency_monitor/
 │   ├── config.go                  # .env loader
 │   ├── metrics.go                 # Prometheus metrics
 │   ├── geckoterminal_monitor.go   # CoinGecko monitor
-│   └── mobula_monitor.go          # Mobula monitor
+│   ├── mobula_monitor.go          # Mobula monitor
+│   └── codex_monitor.go           # Codex monitor
 │
 ├── monitoring/
 │   ├── prometheus.yml             # Prometheus config
@@ -473,6 +483,7 @@ coingecko_latency_milliseconds{chain="solana"}
 |------------|--------|--------|--------|
 | **CoinGecko** | Solana, BNB, Base | WebSocket | ✅ Active |
 | **Mobula** | Solana, BNB, Base | WebSocket | ✅ Active |
+| **Codex** | Solana, BNB, Base | GraphQL WebSocket | ✅ Active |
 
 ---
 
