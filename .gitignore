@@ -1,5 +1,6 @@
 # Binaries
 latency_monitor
+bin/
 
 # Logs
 monitor.log
