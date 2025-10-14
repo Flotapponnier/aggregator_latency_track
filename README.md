@@ -179,7 +179,7 @@ func handleYourAggregatorMessages(conn *websocket.Conn, config *Config) {
 
 // Main monitor function
 func runYourAggregatorMonitor(config *Config, stopChan <-chan struct{}) {
-    fmt.Println("🚀 Starting YourAggregator monitor...")
+    fmt.Println(" Starting YourAggregator monitor...")
 
     conn, err := connectYourAggregatorWebSocket(config.YourAggregatorAPIKey)
     if err != nil {
@@ -191,7 +191,7 @@ func runYourAggregatorMonitor(config *Config, stopChan <-chan struct{}) {
     go handleYourAggregatorMessages(conn, config)
 
     <-stopChan
-    fmt.Println("🛑 YourAggregator monitor stopped")
+    fmt.Println(" YourAggregator monitor stopped")
 }
 ```
 

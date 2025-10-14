@@ -3,6 +3,7 @@
 # ============================================================================
 
 BINARY_NAME = latency_monitor
+BINARY_PATH = bin/monitor
 GO_FILES = ./cmd/script
 
 .PHONY: help
@@ -28,6 +29,7 @@ help:
 .PHONY: deps
 deps:
 	@echo "📦 Downloading dependencies..."
+	@go mod tidy
 	@go mod download
 	@echo "✓ Dependencies ready"
 	@echo ""
@@ -35,8 +37,9 @@ deps:
 .PHONY: build
 build: deps
 	@echo "🔨 Building $(BINARY_NAME)..."
-	@go build -o $(BINARY_NAME) $(GO_FILES)
-	@echo "✓ Build complete: $(BINARY_NAME)"
+	@mkdir -p bin
+	@go build -o $(BINARY_PATH) $(GO_FILES)
+	@echo "✓ Build complete: $(BINARY_PATH)"
 	@echo ""
 
 .PHONY: start-grafana
@@ -52,11 +55,13 @@ start-grafana:
 run: build start-grafana
 	@echo "🚀 Starting Aggregator Latency Monitor in background..."
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@./$(BINARY_NAME) > monitor.log 2>&1 & echo $$! > monitor.pid
+	@./$(BINARY_PATH) > monitor.log 2>&1 & echo $$! > monitor.pid
 	@sleep 2
 	@if [ -f monitor.pid ]; then \
 		echo "✓ Monitor started (PID: $$(cat monitor.pid))"; \
-		echo "✓ Logs: tail -f monitor.log"; \
+		echo "✓ Monitoring: CoinGecko, Mobula, Codex"; \
+		echo "✓ Chains: Solana, BNB, Base"; \
+		echo "✓ Logs: make logs"; \
 		echo "✓ Stop: make stop"; \
 		echo ""; \
 	else \
@@ -85,7 +90,7 @@ stop: down
 .PHONY: clean
 clean: down
 	@echo "🧹 Cleaning binary..."
-	@rm -f $(BINARY_NAME)
+	@rm -f $(BINARY_PATH) $(BINARY_NAME)
 	@echo "✓ Clean complete"
 
 .PHONY: logs
@@ -127,7 +132,7 @@ destroy:
 		if [ -f monitor.pid ]; then kill $$(cat monitor.pid) 2>/dev/null || true; rm -f monitor.pid; fi; \
 		pkill -9 latency_monitor 2>/dev/null || true; \
 		docker-compose down -v 2>/dev/null || true; \
-		rm -f $(BINARY_NAME) monitor.log monitor.pid; \
+		rm -f $(BINARY_PATH) $(BINARY_NAME) monitor.log monitor.pid; \
 		echo "✓ Everything destroyed"; \
 	else \
 		echo "❌ Cancelled"; \

@@ -14,10 +14,10 @@ const (
 )
 
 var mobulaChains = []struct {
-	blockchain  string
-	blockchainID int64  // For matching responses
-	chainName   string
-	poolAddress string
+	blockchain   string
+	blockchainID int64
+	chainName    string
+	poolAddress  string
 }{
 	{"solana", 1399811149, "solana", "7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm"},
 	{"evm:56", 56, "bnb", "0x58f876857a02d6762e0101bb5c46a8c1ed44dc16"},
@@ -31,8 +31,8 @@ type MobulaSubscribeMessage struct {
 }
 
 type MobulaPayload struct {
-	AssetMode bool           `json:"assetMode"`
-	Items     []MobulaItem   `json:"items"`
+	AssetMode bool         `json:"assetMode"`
+	Items     []MobulaItem `json:"items"`
 }
 
 type MobulaItem struct {
@@ -41,19 +41,19 @@ type MobulaItem struct {
 }
 
 type MobulaTradeData struct {
-	Date              int64   `json:"date"`
-	TokenPrice        float64 `json:"tokenPrice"`
-	TokenPriceVs      float64 `json:"tokenPriceVs"`
-	TokenAmount       float64 `json:"tokenAmount"`
-	TokenAmountVs     float64 `json:"tokenAmountVs"`
-	TokenAmountUsd    float64 `json:"tokenAmountUsd"`
-	Type              string  `json:"type"`
-	Operation         string  `json:"operation"`
-	Blockchain        string  `json:"blockchain"`
-	Hash              string  `json:"hash"`
-	Sender            string  `json:"sender"`
-	Timestamp         int64   `json:"timestamp"`
-	Pair              string  `json:"pair"`
+	Date           int64   `json:"date"`
+	TokenPrice     float64 `json:"tokenPrice"`
+	TokenPriceVs   float64 `json:"tokenPriceVs"`
+	TokenAmount    float64 `json:"tokenAmount"`
+	TokenAmountVs  float64 `json:"tokenAmountVs"`
+	TokenAmountUsd float64 `json:"tokenAmountUsd"`
+	Type           string  `json:"type"`
+	Operation      string  `json:"operation"`
+	Blockchain     string  `json:"blockchain"`
+	Hash           string  `json:"hash"`
+	Sender         string  `json:"sender"`
+	Timestamp      int64   `json:"timestamp"`
+	Pair           string  `json:"pair"`
 }
 
 func connectMobulaWebSocket(apiKey string) (*websocket.Conn, error) {
@@ -78,12 +78,11 @@ func subscribeToMobulaChannel(conn *websocket.Conn, apiKey string) error {
 		Type:          "fast-trade",
 		Authorization: apiKey,
 		Payload: MobulaPayload{
-			AssetMode: false, // false = pools, true = tokens
+			AssetMode: false,
 			Items:     items,
 		},
 	}
 
-	// Debug: print the subscription message
 	msgJSON, _ := json.MarshalIndent(subscribeMsg, "", "  ")
 	fmt.Printf("[MOBULA DEBUG] Sending subscription:\n%s\n", string(msgJSON))
 
@@ -101,7 +100,6 @@ func calculateMobulaLag(tradeTimestamp int64, receiveTime time.Time) int64 {
 }
 
 func getChainNameForMobula(blockchainName string) string {
-	// Normalize blockchain name (lowercase)
 	switch blockchainName {
 	case "Solana", "solana":
 		return "solana"
@@ -126,12 +124,8 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 		receiveTime := time.Now().UTC()
 		messageCount++
 
-		// Debug: Print raw messages (disabled)
-		// fmt.Printf("[MOBULA DEBUG] Message #%d: %s\n", messageCount, string(messageBytes))
-
 		var trade MobulaTradeData
 		if err := json.Unmarshal(messageBytes, &trade); err != nil {
-			// Log for debugging
 			if messageCount <= 5 {
 				fmt.Printf("[MOBULA DEBUG] Failed to parse as trade: %v\n", err)
 			}
@@ -145,8 +139,6 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 			continue
 		}
 
-		// Mesurer comme CoinGecko: NOW - timestamp_onchain
-		// D'après la doc Mobula: date = timestamp du trade on-chain
 		lagMs := calculateMobulaLag(trade.Date, receiveTime)
 
 		chainName := getChainNameForMobula(trade.Blockchain)
@@ -176,7 +168,7 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 }
 
 func runMobulaMonitor(config *Config, stopChan <-chan struct{}) {
-	fmt.Println("🚀 Starting Mobula WebSocket monitor...")
+	fmt.Println(" Starting Mobula WebSocket monitor...")
 	fmt.Printf("   Monitoring %d chains with real-time WebSocket\n", len(mobulaChains))
 	fmt.Printf("   Measuring TRUE indexation lag (WebSocket push timing)\n")
 	fmt.Println()
@@ -212,5 +204,5 @@ func runMobulaMonitor(config *Config, stopChan <-chan struct{}) {
 	go handleMobulaWebSocketMessages(conn, config)
 
 	<-stopChan
-	fmt.Println("🛑 Mobula monitor stopped")
+	fmt.Println(" Mobula monitor stopped")
 }

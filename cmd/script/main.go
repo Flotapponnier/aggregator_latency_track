@@ -32,7 +32,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		fmt.Println("🚀 Starting Prometheus metrics server on :2112")
+		fmt.Println(" Starting Prometheus metrics server on :2112")
 		if err := StartMetricsServer(":2112"); err != nil {
 			fmt.Printf("⚠ Metrics server error: %v\n", err)
 		}
@@ -50,6 +50,13 @@ func main() {
 	go func() {
 		defer wg.Done()
 		runMobulaMonitor(config, stopChan)
+	}()
+
+	// Codex monitor
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runCodexMonitor(config, stopChan)
 	}()
 
 	<-sigChan

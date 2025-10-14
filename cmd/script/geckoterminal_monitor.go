@@ -162,7 +162,7 @@ func handleCoinGeckoWebSocketMessages(conn *websocket.Conn, config *Config) {
 }
 
 func runGeckoTerminalMonitor(config *Config, stopChan <-chan struct{}) {
-	fmt.Println("🚀 Starting CoinGecko WebSocket monitor...")
+	fmt.Println(" Starting CoinGecko WebSocket monitor...")
 	fmt.Printf("   Monitoring %d chains with real-time WebSocket\n", len(coinGeckoChains))
 	fmt.Printf("   Measuring TRUE indexation lag (WebSocket push timing)\n")
 	fmt.Println()
@@ -209,5 +209,5 @@ func runGeckoTerminalMonitor(config *Config, stopChan <-chan struct{}) {
 	go handleCoinGeckoWebSocketMessages(conn, config)
 
 	<-stopChan
-	fmt.Println("🛑 CoinGecko monitor stopped")
+	fmt.Println(" CoinGecko monitor stopped")
 }
