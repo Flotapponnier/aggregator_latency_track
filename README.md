@@ -453,8 +453,6 @@ The following Prometheus metrics are available:
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
 | `{aggregator}_latency_milliseconds` | Gauge | chain | Current indexation lag in ms |
-| `{aggregator}_trades_total` | Counter | chain, type | Total trades processed |
-| `{aggregator}_trade_volume_usd` | Gauge | chain | Last trade volume in USD |
 
 *Note: `{aggregator}` is replaced with the actual aggregator name (e.g., `coingecko_latency_milliseconds`)*
 
