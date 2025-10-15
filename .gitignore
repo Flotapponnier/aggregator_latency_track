@@ -19,3 +19,5 @@ Dockerfile
 deploy.sh
 DEPLOYMENT.md
 listener-monad-testnet-deployment.yaml
+.github/workflows/fly-deploy.yml
+.github/
