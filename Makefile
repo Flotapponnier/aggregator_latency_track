@@ -60,7 +60,7 @@ run: build start-grafana
 	@if [ -f monitor.pid ]; then \
 		echo "✓ Monitor started (PID: $$(cat monitor.pid))"; \
 		echo "✓ Monitoring: CoinGecko, Mobula, Codex"; \
-		echo "✓ Chains: Solana, BNB, Base"; \
+		echo "✓ Chains: Solana, BNB, Base, Monad"; \
 		echo "✓ Logs: make logs"; \
 		echo "✓ Stop: make stop"; \
 		echo ""; \
@@ -82,7 +82,7 @@ down:
 	@docker-compose down 2>/dev/null || true
 	@docker stop prometheus grafana 2>/dev/null || true
 	@docker rm prometheus grafana 2>/dev/null || true
-	@echo "✓ All services stopped"
+	@echo "✓ All services stopped (volumes preserved)"
 
 .PHONY: stop
 stop: down

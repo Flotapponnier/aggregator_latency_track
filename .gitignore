@@ -11,3 +11,11 @@ monitor.pid
 
 # Dependencies
 go.sum
+
+# Deployment (Fly.io)
+fly.toml
+Dockerfile
+.dockerignore
+deploy.sh
+DEPLOYMENT.md
+listener-monad-testnet-deployment.yaml

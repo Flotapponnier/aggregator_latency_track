@@ -22,6 +22,7 @@ var mobulaChains = []struct {
 	{"solana", 1399811149, "solana", "7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm"},
 	{"evm:56", 56, "bnb", "0x58f876857a02d6762e0101bb5c46a8c1ed44dc16"},
 	{"evm:8453", 8453, "base", "0x4c36388be6f416a29c8d8eee81c771ce6be14b18"},
+	{"evm:10143", 10143, "monad", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
 }
 
 type MobulaSubscribeMessage struct {
@@ -83,8 +84,10 @@ func subscribeToMobulaChannel(conn *websocket.Conn, apiKey string) error {
 		},
 	}
 
-	msgJSON, _ := json.MarshalIndent(subscribeMsg, "", "  ")
-	fmt.Printf("[MOBULA DEBUG] Sending subscription:\n%s\n", string(msgJSON))
+	fmt.Printf("[MOBULA] Subscribing to %d pools:\n", len(items))
+	for _, item := range items {
+		fmt.Printf("   - Blockchain: %s, Address: %s\n", item.Blockchain, item.Address)
+	}
 
 	if err := conn.WriteJSON(subscribeMsg); err != nil {
 		return fmt.Errorf("failed to subscribe to fast trades: %w", err)
@@ -107,6 +110,8 @@ func getChainNameForMobula(blockchainName string) string {
 		return "base"
 	case "BSC", "BNB Smart Chain", "BNB Smart Chain (BEP20)", "bnb":
 		return "bnb"
+	case "Monad", "monad", "Monad Testnet", "monad-testnet", "Monad testnet":
+		return "monad"
 	default:
 		return blockchainName
 	}
@@ -124,18 +129,29 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 		receiveTime := time.Now().UTC()
 		messageCount++
 
+		// Try to parse as error response first
+		var errorResp map[string]interface{}
+		if err := json.Unmarshal(messageBytes, &errorResp); err == nil {
+			if errMsg, ok := errorResp["error"]; ok {
+				fmt.Printf("[MOBULA ERROR] Server returned error: %v\n", errMsg)
+				fmt.Printf("[MOBULA ERROR] Full response: %v\n", errorResp)
+				continue
+			}
+			if status, ok := errorResp["status"]; ok {
+				fmt.Printf("[MOBULA STATUS] Server status: %v\n", status)
+				if status != "success" && status != "ok" {
+					fmt.Printf("[MOBULA STATUS] Full response: %v\n", errorResp)
+				}
+				continue
+			}
+		}
+
 		var trade MobulaTradeData
 		if err := json.Unmarshal(messageBytes, &trade); err != nil {
-			if messageCount <= 5 {
-				fmt.Printf("[MOBULA DEBUG] Failed to parse as trade: %v\n", err)
-			}
 			continue
 		}
 
 		if trade.Hash == "" || trade.Blockchain == "" {
-			if messageCount <= 5 {
-				fmt.Printf("[MOBULA DEBUG] Skipping message - Hash: %s, Blockchain: %s\n", trade.Hash, trade.Blockchain)
-			}
 			continue
 		}
 
