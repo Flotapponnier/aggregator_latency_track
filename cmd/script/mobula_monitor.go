@@ -22,7 +22,7 @@ var mobulaChains = []struct {
 	{"solana", 1399811149, "solana", "7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm"},
 	{"evm:56", 56, "bnb", "0x58f876857a02d6762e0101bb5c46a8c1ed44dc16"},
 	{"evm:8453", 8453, "base", "0x4c36388be6f416a29c8d8eee81c771ce6be14b18"},
-	{"evm:10143", 10143, "monad", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
+	{"evm:10143", 10143, "monad-testnet", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
 }
 
 type MobulaSubscribeMessage struct {
@@ -84,7 +84,7 @@ func subscribeToMobulaChannel(conn *websocket.Conn, apiKey string) error {
 		},
 	}
 
-	fmt.Printf("[MOBULA] Subscribing to %d pools:\n", len(items))
+	fmt.Printf("[MOBULA-TRADE] Subscribing to %d pools:\n", len(items))
 	for _, item := range items {
 		fmt.Printf("   - Blockchain: %s, Address: %s\n", item.Blockchain, item.Address)
 	}
@@ -111,7 +111,7 @@ func getChainNameForMobula(blockchainName string) string {
 	case "BSC", "BNB Smart Chain", "BNB Smart Chain (BEP20)", "bnb":
 		return "bnb"
 	case "Monad", "monad", "Monad Testnet", "monad-testnet", "Monad testnet":
-		return "monad"
+		return "monad-testnet"
 	default:
 		return blockchainName
 	}
@@ -122,7 +122,7 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 	for {
 		_, messageBytes, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("[MOBULA] WebSocket read error: %v", err)
+			log.Printf("[MOBULA-TRADE] WebSocket read error: %v", err)
 			return
 		}
 
@@ -133,14 +133,14 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 		var errorResp map[string]interface{}
 		if err := json.Unmarshal(messageBytes, &errorResp); err == nil {
 			if errMsg, ok := errorResp["error"]; ok {
-				fmt.Printf("[MOBULA ERROR] Server returned error: %v\n", errMsg)
-				fmt.Printf("[MOBULA ERROR] Full response: %v\n", errorResp)
+				fmt.Printf("[MOBULA-TRADE ERROR] Server returned error: %v\n", errMsg)
+				fmt.Printf("[MOBULA-TRADE ERROR] Full response: %v\n", errorResp)
 				continue
 			}
 			if status, ok := errorResp["status"]; ok {
-				fmt.Printf("[MOBULA STATUS] Server status: %v\n", status)
+				fmt.Printf("[MOBULA-TRADE STATUS] Server status: %v\n", status)
 				if status != "success" && status != "ok" {
-					fmt.Printf("[MOBULA STATUS] Full response: %v\n", errorResp)
+					fmt.Printf("[MOBULA-TRADE STATUS] Full response: %v\n", errorResp)
 				}
 				continue
 			}
@@ -169,7 +169,7 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 		fmt.Printf("\n[DEBUG] Raw timestamp: %d | Trade time parsed: %s | Receive time: %s | Lag: %dms\n",
 			trade.Date, tradeTime, timestamp, lagMs)
 
-		fmt.Printf("[MOBULA][%s][%s] New fast trade! Tx: %s... | Type: %s | Volume: $%.2f | Trade time: %s | Lag: %dms\n",
+		fmt.Printf("[MOBULA-TRADE][%s][%s] New fast trade! Tx: %s... | Type: %s | Volume: $%.2f | Trade time: %s | Lag: %dms\n",
 			timestamp,
 			chainName,
 			txHashShort,
@@ -184,41 +184,68 @@ func handleMobulaWebSocketMessages(conn *websocket.Conn, config *Config) {
 }
 
 func runMobulaMonitor(config *Config, stopChan <-chan struct{}) {
-	fmt.Println(" Starting Mobula WebSocket monitor...")
+	fmt.Println("Starting Mobula Trade WebSocket monitor...")
 	fmt.Printf("   Monitoring %d chains with real-time WebSocket\n", len(mobulaChains))
 	fmt.Printf("   Measuring TRUE indexation lag (WebSocket push timing)\n")
 	fmt.Println()
 
 	if config.MobulaAPIKey == "" {
-		fmt.Println("⚠ MOBULA_API_KEY not set in .env file. Skipping Mobula monitor.")
+		fmt.Println("MOBULA_API_KEY not set in .env file. Skipping Mobula monitor.")
 		return
 	}
 
-	conn, err := connectMobulaWebSocket(config.MobulaAPIKey)
-	if err != nil {
-		log.Printf("[MOBULA] Failed to connect: %v", err)
-		return
+	reconnectDelay := 5 * time.Second
+	maxReconnectDelay := 60 * time.Second
+
+	for {
+		select {
+		case <-stopChan:
+			fmt.Println("Mobula Trade monitor stopped")
+			return
+		default:
+			conn, err := connectMobulaWebSocket(config.MobulaAPIKey)
+			if err != nil {
+				log.Printf("[MOBULA-TRADE] Failed to connect: %v. Retrying in %v...", err, reconnectDelay)
+				time.Sleep(reconnectDelay)
+				reconnectDelay = reconnectDelay * 2
+				if reconnectDelay > maxReconnectDelay {
+					reconnectDelay = maxReconnectDelay
+				}
+				continue
+			}
+
+			fmt.Println("   Connected to Mobula Trade WebSocket")
+
+			if err := subscribeToMobulaChannel(conn, config.MobulaAPIKey); err != nil {
+				log.Printf("[MOBULA-TRADE] Failed to subscribe to channel: %v. Retrying in %v...", err, reconnectDelay)
+				conn.Close()
+				time.Sleep(reconnectDelay)
+				reconnectDelay = reconnectDelay * 2
+				if reconnectDelay > maxReconnectDelay {
+					reconnectDelay = maxReconnectDelay
+				}
+				continue
+			}
+			fmt.Println("   Subscribed to fast-trade stream")
+
+			time.Sleep(500 * time.Millisecond)
+
+			fmt.Println("   Configured pools for monitoring:")
+			for _, chain := range mobulaChains {
+				fmt.Printf("     - %s (%s)\n", chain.chainName, chain.poolAddress)
+			}
+			fmt.Println()
+
+			// Reset reconnect delay on successful connection
+			reconnectDelay = 5 * time.Second
+
+			// This will block until connection error or stopChan
+			handleMobulaWebSocketMessages(conn, config)
+			conn.Close()
+
+			// Connection died, log and reconnect
+			log.Printf("[MOBULA-TRADE] Connection lost. Reconnecting in %v...", reconnectDelay)
+			time.Sleep(reconnectDelay)
+		}
 	}
-	defer conn.Close()
-
-	fmt.Println("   ✓ Connected to Mobula WebSocket")
-
-	if err := subscribeToMobulaChannel(conn, config.MobulaAPIKey); err != nil {
-		log.Printf("[MOBULA] Failed to subscribe to channel: %v", err)
-		return
-	}
-	fmt.Println("   ✓ Subscribed to fast-trade stream")
-
-	time.Sleep(500 * time.Millisecond)
-
-	fmt.Println("   ✓ Configured pools for monitoring:")
-	for _, chain := range mobulaChains {
-		fmt.Printf("     - %s (%s)\n", chain.chainName, chain.poolAddress)
-	}
-	fmt.Println()
-
-	go handleMobulaWebSocketMessages(conn, config)
-
-	<-stopChan
-	fmt.Println(" Mobula monitor stopped")
 }

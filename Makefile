@@ -13,6 +13,7 @@ help:
 	@echo ""
 	@echo "Commands:"
 	@echo "  make run      - Start everything (Grafana + Monitor in background)"
+	@echo "  make pulse    - Start Mobula Pulse monitor only (foreground)"
 	@echo "  make stop     - Stop all services"
 	@echo "  make logs     - Follow monitor logs in real-time"
 	@echo "  make status   - Show status of all services"
@@ -76,8 +77,8 @@ down:
 		kill $$(cat monitor.pid) 2>/dev/null || true; \
 		rm -f monitor.pid; \
 	fi
-	@echo "  → Killing all latency_monitor processes..."
-	@pkill -9 latency_monitor 2>/dev/null || true
+	@echo "  → Killing all monitor processes..."
+	@pkill -9 -f "bin/monitor" 2>/dev/null || true
 	@echo "  → Stopping Docker containers..."
 	@docker-compose down 2>/dev/null || true
 	@docker stop prometheus grafana 2>/dev/null || true
@@ -130,12 +131,17 @@ destroy:
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		echo "🗑️  Destroying everything..."; \
 		if [ -f monitor.pid ]; then kill $$(cat monitor.pid) 2>/dev/null || true; rm -f monitor.pid; fi; \
-		pkill -9 latency_monitor 2>/dev/null || true; \
+		pkill -9 -f "bin/monitor" 2>/dev/null || true; \
 		docker-compose down -v 2>/dev/null || true; \
 		rm -f $(BINARY_PATH) $(BINARY_NAME) monitor.log monitor.pid; \
 		echo "✓ Everything destroyed"; \
 	else \
 		echo "❌ Cancelled"; \
 	fi
+
+.PHONY: pulse
+pulse:
+	@echo "🚀 Starting Mobula Pulse V2 Monitor..."
+	@go run ./cmd/pulse/*.go
 
 .DEFAULT_GOAL := help

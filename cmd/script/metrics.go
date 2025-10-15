@@ -15,6 +15,9 @@ var (
 
 	// Combined metric to track all aggregators in one place for easy comparison
 	allAggregatorLatency *prometheus.GaugeVec
+
+	// Pool discovery latency metric
+	poolDiscoveryLatency *prometheus.GaugeVec
 )
 
 func init() {
@@ -26,6 +29,15 @@ func init() {
 		[]string{"aggregator", "chain"},
 	)
 	prometheus.MustRegister(allAggregatorLatency)
+
+	poolDiscoveryLatency = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "pool_discovery_latency_milliseconds",
+			Help: "Time from pool creation on-chain to first trade detection (pool discovery latency)",
+		},
+		[]string{"aggregator", "chain"},
+	)
+	prometheus.MustRegister(poolDiscoveryLatency)
 }
 
 type AggregatorMetrics struct {
@@ -62,6 +74,10 @@ func RecordLatency(aggregator string, chain string, latencyMs float64) {
 
 	// Also record to the combined metric for easy comparison
 	allAggregatorLatency.WithLabelValues(aggregator, chain).Set(latencyMs)
+}
+
+func RecordPoolDiscoveryLatency(aggregator string, chain string, latencyMs float64) {
+	poolDiscoveryLatency.WithLabelValues(aggregator, chain).Set(latencyMs)
 }
 
 func StartMetricsServer(addr string) error {

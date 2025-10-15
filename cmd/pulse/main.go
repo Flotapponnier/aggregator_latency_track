@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Aggregator Indexation Lag Monitor ===")
-	fmt.Println("Measuring real-time indexation lag (head lag) for blockchain data APIs")
+	fmt.Println("=== Mobula Pulse V2 Monitor ===")
+	fmt.Println("Monitoring NEW POOL CREATION across multiple chains")
 	fmt.Println("Press Ctrl+C to stop")
 	fmt.Println()
 
@@ -38,28 +38,7 @@ func main() {
 		}
 	}()
 
-	// CoinGecko monitor
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		runGeckoTerminalMonitor(config, stopChan)
-	}()
-
-	// Mobula monitor
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		runMobulaMonitor(config, stopChan)
-	}()
-
-	// Codex monitor
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		runCodexMonitor(config, stopChan)
-	}()
-
-	// Mobula Pulse V2 monitor (for new pool discovery)
+	// Mobula Pulse V2 monitor only
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -67,9 +46,9 @@ func main() {
 	}()
 
 	<-sigChan
-	fmt.Println("\n\n🛑 Shutting down monitors...")
+	fmt.Println("\n\n🛑 Shutting down Mobula Pulse monitor...")
 	close(stopChan)
 
 	wg.Wait()
-	fmt.Println("✓ All monitors stopped")
+	fmt.Println("✓ Monitor stopped")
 }

@@ -21,7 +21,7 @@ var coinGeckoChains = []struct {
 	{"solana", "solana", "7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm"},
 	{"bsc", "bnb", "0x58f876857a02d6762e0101bb5c46a8c1ed44dc16"},
 	{"base", "base", "0x4c36388be6f416a29c8d8eee81c771ce6be14b18"},
-	{"monad-testnet", "monad", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
+	{"monad-testnet", "monad-testnet", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
 }
 
 type WSCommand struct {
@@ -108,7 +108,7 @@ func getChainNameForCoinGecko(networkID string) string {
 	}
 	// Handle monad variations
 	if networkID == "monad-testnet" || networkID == "monad-mainnet" || networkID == "monad" {
-		return "monad"
+		return "monad-testnet"
 	}
 	return networkID
 }
@@ -177,42 +177,75 @@ func runGeckoTerminalMonitor(config *Config, stopChan <-chan struct{}) {
 		return
 	}
 
-	conn, err := connectCoinGeckoWebSocket(config.CoinGeckoAPIKey)
-	if err != nil {
-		log.Printf("[COINGECKO] Failed to connect: %v", err)
-		return
+	reconnectDelay := 5 * time.Second
+	maxReconnectDelay := 60 * time.Second
+
+	for {
+		select {
+		case <-stopChan:
+			fmt.Println(" CoinGecko monitor stopped")
+			return
+		default:
+			conn, err := connectCoinGeckoWebSocket(config.CoinGeckoAPIKey)
+			if err != nil {
+				log.Printf("[COINGECKO] Failed to connect: %v. Retrying in %v...", err, reconnectDelay)
+				time.Sleep(reconnectDelay)
+				reconnectDelay = reconnectDelay * 2
+				if reconnectDelay > maxReconnectDelay {
+					reconnectDelay = maxReconnectDelay
+				}
+				continue
+			}
+
+			fmt.Println("   ✓ Connected to CoinGecko WebSocket")
+
+			if err := subscribeToCoinGeckoChannel(conn); err != nil {
+				log.Printf("[COINGECKO] Failed to subscribe to channel: %v. Retrying in %v...", err, reconnectDelay)
+				conn.Close()
+				time.Sleep(reconnectDelay)
+				reconnectDelay = reconnectDelay * 2
+				if reconnectDelay > maxReconnectDelay {
+					reconnectDelay = maxReconnectDelay
+				}
+				continue
+			}
+			fmt.Println("   ✓ Subscribed to OnchainTrade channel")
+
+			time.Sleep(500 * time.Millisecond)
+
+			var pools []string
+			for _, chain := range coinGeckoChains {
+				poolAddress := fmt.Sprintf("%s:%s", chain.networkID, chain.poolAddress)
+				pools = append(pools, poolAddress)
+			}
+
+			if err := setPoolsForCoinGecko(conn, pools); err != nil {
+				log.Printf("[COINGECKO] Failed to set pools: %v. Retrying in %v...", err, reconnectDelay)
+				conn.Close()
+				time.Sleep(reconnectDelay)
+				reconnectDelay = reconnectDelay * 2
+				if reconnectDelay > maxReconnectDelay {
+					reconnectDelay = maxReconnectDelay
+				}
+				continue
+			}
+
+			fmt.Println("   ✓ Configured pools for monitoring:")
+			for _, chain := range coinGeckoChains {
+				fmt.Printf("     - %s (%s)\n", chain.chainName, chain.poolAddress)
+			}
+			fmt.Println()
+
+			// Reset reconnect delay on successful connection
+			reconnectDelay = 5 * time.Second
+
+			// This will block until connection error or stopChan
+			handleCoinGeckoWebSocketMessages(conn, config)
+			conn.Close()
+
+			// Connection died, log and reconnect
+			log.Printf("[COINGECKO] Connection lost. Reconnecting in %v...", reconnectDelay)
+			time.Sleep(reconnectDelay)
+		}
 	}
-	defer conn.Close()
-
-	fmt.Println("   ✓ Connected to CoinGecko WebSocket")
-
-	if err := subscribeToCoinGeckoChannel(conn); err != nil {
-		log.Printf("[COINGECKO] Failed to subscribe to channel: %v", err)
-		return
-	}
-	fmt.Println("   ✓ Subscribed to OnchainTrade channel")
-
-	time.Sleep(500 * time.Millisecond)
-
-	var pools []string
-	for _, chain := range coinGeckoChains {
-		poolAddress := fmt.Sprintf("%s:%s", chain.networkID, chain.poolAddress)
-		pools = append(pools, poolAddress)
-	}
-
-	if err := setPoolsForCoinGecko(conn, pools); err != nil {
-		log.Printf("[COINGECKO] Failed to set pools: %v", err)
-		return
-	}
-
-	fmt.Println("   ✓ Configured pools for monitoring:")
-	for _, chain := range coinGeckoChains {
-		fmt.Printf("     - %s (%s)\n", chain.chainName, chain.poolAddress)
-	}
-	fmt.Println()
-
-	go handleCoinGeckoWebSocketMessages(conn, config)
-
-	<-stopChan
-	fmt.Println(" CoinGecko monitor stopped")
 }

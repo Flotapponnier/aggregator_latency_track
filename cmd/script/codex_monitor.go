@@ -21,7 +21,7 @@ var codexChains = []struct {
 	{1399811149, "solana", "7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm"},
 	{56, "bnb", "0x58f876857a02d6762e0101bb5c46a8c1ed44dc16"},
 	{8453, "base", "0x4c36388be6f416a29c8d8eee81c771ce6be14b18"},
-	{10143, "monad", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
+	{10143, "monad-testnet", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
 }
 
 type CodexWSMessage struct {
@@ -255,29 +255,63 @@ func runCodexMonitor(config *Config, stopChan <-chan struct{}) {
 		return
 	}
 
-	conn, err := connectCodexWebSocket(config.CodexAPIKey)
-	if err != nil {
-		log.Printf("[CODEX] Failed to connect: %v", err)
-		return
-	}
-	defer conn.Close()
+	reconnectDelay := 5 * time.Second
+	maxReconnectDelay := 60 * time.Second
 
-	fmt.Println("   ✓ Connected to Codex WebSocket")
+	for {
+		select {
+		case <-stopChan:
+			fmt.Println("🛑 Codex monitor stopped")
+			return
+		default:
+			conn, err := connectCodexWebSocket(config.CodexAPIKey)
+			if err != nil {
+				log.Printf("[CODEX] Failed to connect: %v. Retrying in %v...", err, reconnectDelay)
+				time.Sleep(reconnectDelay)
+				reconnectDelay = reconnectDelay * 2
+				if reconnectDelay > maxReconnectDelay {
+					reconnectDelay = maxReconnectDelay
+				}
+				continue
+			}
 
-	for i, chain := range codexChains {
-		subID := fmt.Sprintf("sub_%d", i+1)
-		if err := subscribeToCodexPool(conn, chain.poolAddress, chain.networkID, subID); err != nil {
-			log.Printf("[CODEX] Failed to subscribe to %s pool: %v", chain.chainName, err)
-			continue
+			fmt.Println("   ✓ Connected to Codex WebSocket")
+
+			// Subscribe to all chains
+			allSubscribed := true
+			for i, chain := range codexChains {
+				subID := fmt.Sprintf("sub_%d", i+1)
+				if err := subscribeToCodexPool(conn, chain.poolAddress, chain.networkID, subID); err != nil {
+					log.Printf("[CODEX] Failed to subscribe to %s pool: %v. Will reconnect...", chain.chainName, err)
+					allSubscribed = false
+					break
+				}
+				fmt.Printf("   ✓ Subscribed to %s pool (%s)\n", chain.chainName, chain.poolAddress)
+				time.Sleep(200 * time.Millisecond)
+			}
+
+			if !allSubscribed {
+				conn.Close()
+				time.Sleep(reconnectDelay)
+				reconnectDelay = reconnectDelay * 2
+				if reconnectDelay > maxReconnectDelay {
+					reconnectDelay = maxReconnectDelay
+				}
+				continue
+			}
+
+			fmt.Println()
+
+			// Reset reconnect delay on successful connection and subscription
+			reconnectDelay = 5 * time.Second
+
+			// This will block until connection error or stopChan
+			handleCodexWebSocketMessages(conn, config)
+			conn.Close()
+
+			// Connection died, log and reconnect
+			log.Printf("[CODEX] Connection lost. Reconnecting in %v...", reconnectDelay)
+			time.Sleep(reconnectDelay)
 		}
-		fmt.Printf("   ✓ Subscribed to %s pool (%s)\n", chain.chainName, chain.poolAddress)
-		time.Sleep(200 * time.Millisecond)
 	}
-
-	fmt.Println()
-
-	go handleCodexWebSocketMessages(conn, config)
-
-	<-stopChan
-	fmt.Println("🛑 Codex monitor stopped")
 }
