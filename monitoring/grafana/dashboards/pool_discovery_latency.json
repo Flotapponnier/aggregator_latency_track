@@ -12,6 +12,22 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "enable": true,
+        "expr": "pool_discovery_latency_milliseconds > 120000",
+        "hide": false,
+        "iconColor": "red",
+        "name": "Latency > 2min",
+        "tagKeys": "chain,aggregator",
+        "textFormat": "{{aggregator}} - {{chain}}: {{value}}ms",
+        "titleFormat": "Latency > 2min",
+        "type": "tags",
+        "useValueForTime": true
       }
     ]
   },

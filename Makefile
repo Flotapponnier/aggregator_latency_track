@@ -14,6 +14,7 @@ help:
 	@echo "Commands:"
 	@echo "  make run      - Start everything (Grafana + Monitor in background)"
 	@echo "  make pulse    - Start Mobula Pulse monitor only (foreground)"
+	@echo "  make gmgn     - Start GMGN Python monitor (foreground)"
 	@echo "  make stop     - Stop all services"
 	@echo "  make logs     - Follow monitor logs in real-time"
 	@echo "  make status   - Show status of all services"
@@ -24,7 +25,8 @@ help:
 	@echo "Dashboard Access:"
 	@echo "  Grafana:    http://localhost:3000 (admin/admin)"
 	@echo "  Prometheus: http://localhost:9090"
-	@echo "  Metrics:    http://localhost:2112/metrics"
+	@echo "  Metrics:    http://localhost:2112/metrics (Go monitors)"
+	@echo "  GMGN:       http://localhost:2113/metrics (Python monitor)"
 	@echo ""
 
 .PHONY: deps
@@ -143,5 +145,29 @@ destroy:
 pulse:
 	@echo "🚀 Starting Mobula Pulse V2 Monitor..."
 	@go run ./cmd/pulse/*.go
+
+.PHONY: gmgn-setup
+gmgn-setup:
+	@echo "📦 Setting up GMGN Python monitor..."
+	@cd gmgn_monitor && python3 -m venv venv 2>/dev/null || true
+	@cd gmgn_monitor && . venv/bin/activate && pip install -q -r requirements.txt
+	@if [ ! -f gmgn_monitor/.env ]; then \
+		cp gmgn_monitor/.env.example gmgn_monitor/.env; \
+		echo "✓ Created .env file from template"; \
+		echo "  → Edit gmgn_monitor/.env to configure"; \
+	fi
+	@echo "✓ GMGN monitor setup complete"
+	@echo ""
+
+.PHONY: gmgn
+gmgn: gmgn-setup
+	@echo "🚀 Starting GMGN WebSocket Monitor..."
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "📊 Tracking: Swap trades + New pool discoveries"
+	@echo "🔗 Chains: Solana, BNB, Base"
+	@echo "📈 Metrics: http://localhost:2113/metrics"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@cd gmgn_monitor && . venv/bin/activate && python3 main.py
 
 .DEFAULT_GOAL := help

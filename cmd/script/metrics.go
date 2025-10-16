@@ -69,6 +69,11 @@ func GetOrCreateMetrics(aggregator string) *AggregatorMetrics {
 }
 
 func RecordLatency(aggregator string, chain string, latencyMs float64) {
+	// Filter out invalid values: negative or > 2 minutes (120000ms)
+	if latencyMs < 0 || latencyMs > 120000 {
+		return
+	}
+
 	metrics := GetOrCreateMetrics(aggregator)
 	metrics.Latency.WithLabelValues(chain).Set(latencyMs)
 
@@ -77,6 +82,11 @@ func RecordLatency(aggregator string, chain string, latencyMs float64) {
 }
 
 func RecordPoolDiscoveryLatency(aggregator string, chain string, latencyMs float64) {
+	// Filter out invalid values: negative or > 2 minutes (120000ms)
+	if latencyMs < 0 || latencyMs > 120000 {
+		return
+	}
+
 	poolDiscoveryLatency.WithLabelValues(aggregator, chain).Set(latencyMs)
 }
 
