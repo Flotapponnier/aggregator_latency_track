@@ -98,7 +98,6 @@ func subscribeToPulse(conn *websocket.Conn, apiKey string) error {
 			Model:      "default",
 			AssetMode:  true,
 			ChainID:    pulseChains,
-			PoolTypes:  []string{"pumpfun", "moonshot-evm"},
 			Compressed: false,
 			Views: []PulseView{
 				{

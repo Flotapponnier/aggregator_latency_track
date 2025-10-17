@@ -7,5 +7,5 @@ scrape_configs:
     static_configs:
       - targets: ['host.docker.internal:2112']
         labels:
-          app: 'competitor_latency_monitor'
+          app: 'aggregator_latency_monitor'
           environment: 'production'

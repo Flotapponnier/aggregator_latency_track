@@ -157,13 +157,7 @@
       "id": 1,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "lastNotNull",
-            "max",
-            "min",
-            "count"
-          ],
+          "calcs": ["mean", "lastNotNull", "max", "min", "count"],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
@@ -190,6 +184,125 @@
       ],
       "title": "Mobula Pulse - New Pool Discovery Latency",
       "description": "Time from pool creation on-chain to detection by Mobula Pulse (Pulse V2 API). Each point represents a new pool discovered.",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "points",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 8,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5000
+              },
+              {
+                "color": "red",
+                "value": 10000
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*gmgn.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "lastNotNull", "max", "min", "count"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Mean",
+          "sortDesc": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "asc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "pool_discovery_latency_milliseconds{aggregator=\"gmgn\"}",
+          "legendFormat": "{{aggregator}} - {{chain}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "GMGN - New Pool Discovery Latency",
+      "description": "Time from pool creation on-chain to detection by GMGN WebSocket. Each point represents a new pool discovered.",
       "type": "timeseries"
     },
     {
@@ -342,13 +455,7 @@
       "id": 2,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "lastNotNull",
-            "max",
-            "min",
-            "count"
-          ],
+          "calcs": ["mean", "lastNotNull", "max", "min", "count"],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
@@ -426,9 +533,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": ""
         },
         "showThresholdLabels": false,
@@ -491,9 +596,7 @@
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "values": false,
-          "calcs": [
-            "count"
-          ],
+          "calcs": ["count"],
           "fields": ""
         },
         "showPercentChange": false,
@@ -520,12 +623,7 @@
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": [
-    "pool-discovery",
-    "latency",
-    "aggregator",
-    "new-pools"
-  ],
+  "tags": ["pool-discovery", "latency", "aggregator", "new-pools"],
   "templating": {
     "list": []
   },
