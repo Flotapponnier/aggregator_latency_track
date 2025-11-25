@@ -23,9 +23,9 @@ const (
 // Chains to monitor for new pools
 var pulseChains = []string{
 	"solana:solana",
-	"evm:56",    // BNB
-	"evm:8453",  // Base
-	"evm:10143", // Monad testnet
+	"evm:56",  // BNB
+	"evm:8453", // Base
+	"evm:143", // Monad
 }
 
 type PulseSubscribeMessage struct {
@@ -125,8 +125,8 @@ func getChainNameForPulse(chainID string) string {
 		return "bnb"
 	case "evm:8453":
 		return "base"
-	case "evm:10143":
-		return "monad-testnet"
+	case "evm:143":
+		return "monad"
 	default:
 		return chainID
 	}

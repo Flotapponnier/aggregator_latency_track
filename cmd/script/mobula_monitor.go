@@ -22,7 +22,7 @@ var mobulaChains = []struct {
 	{"solana", 1399811149, "solana", "7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm"},
 	{"evm:56", 56, "bnb", "0x58f876857a02d6762e0101bb5c46a8c1ed44dc16"},
 	{"evm:8453", 8453, "base", "0x4c36388be6f416a29c8d8eee81c771ce6be14b18"},
-	{"evm:10143", 10143, "monad-testnet", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
+	{"evm:143", 143, "monad", "0x659bD0BC4167BA25c62E05656F78043E7eD4a9da"},  // Monad mainnet - chain_id 143
 }
 
 type MobulaSubscribeMessage struct {
@@ -110,8 +110,8 @@ func getChainNameForMobula(blockchainName string) string {
 		return "base"
 	case "BSC", "BNB Smart Chain", "BNB Smart Chain (BEP20)", "bnb":
 		return "bnb"
-	case "Monad", "monad", "Monad Testnet", "monad-testnet", "Monad testnet":
-		return "monad-testnet"
+	case "Monad", "monad":
+		return "monad"
 	default:
 		return blockchainName
 	}

@@ -21,7 +21,7 @@ var coinGeckoChains = []struct {
 	{"solana", "solana", "7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm"},
 	{"bsc", "bnb", "0x58f876857a02d6762e0101bb5c46a8c1ed44dc16"},
 	{"base", "base", "0x4c36388be6f416a29c8d8eee81c771ce6be14b18"},
-	{"monad-testnet", "monad-testnet", "0x7c2b946fab9207ed045bc7702e0f72718ba28280"},  // Monad testnet - chain_id 10143
+	{"monad", "monad", "0x659bD0BC4167BA25c62E05656F78043E7eD4a9da"},  // Monad mainnet - chain_id 143
 }
 
 type WSCommand struct {
@@ -108,7 +108,7 @@ func getChainNameForCoinGecko(networkID string) string {
 	}
 	// Handle monad variations
 	if networkID == "monad-testnet" || networkID == "monad-mainnet" || networkID == "monad" {
-		return "monad-testnet"
+		return "monad"
 	}
 	return networkID
 }
