@@ -214,8 +214,6 @@ func handlePulseV2Messages(conn *websocket.Conn, config *Config) {
 			fmt.Printf("[MOBULA-PULSE ERROR] Received error: %v\n", genericMsg)
 
 		default:
-			// Log unknown message types for debugging
-			// fmt.Printf("[MOBULA-PULSE] Unknown message type: %s\n", msgType)
 			continue
 		}
 	}

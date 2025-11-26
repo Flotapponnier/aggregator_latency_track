@@ -20,7 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("✓ Metrics will be exposed on :2112/metrics for Prometheus")
+	fmt.Println("Metrics will be exposed on :2112/metrics for Prometheus")
 	fmt.Println()
 
 	sigChan := make(chan os.Signal, 1)
@@ -32,9 +32,9 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		fmt.Println(" Starting Prometheus metrics server on :2112")
+		fmt.Println("Starting Prometheus metrics server on :2112")
 		if err := StartMetricsServer(":2112"); err != nil {
-			fmt.Printf("⚠ Metrics server error: %v\n", err)
+			fmt.Printf("Metrics server error: %v\n", err)
 		}
 	}()
 
@@ -46,9 +46,9 @@ func main() {
 	}()
 
 	<-sigChan
-	fmt.Println("\n\n🛑 Shutting down Mobula Pulse monitor...")
+	fmt.Println("\n\nShutting down Mobula Pulse monitor...")
 	close(stopChan)
 
 	wg.Wait()
-	fmt.Println("✓ Monitor stopped")
+	fmt.Println("Monitor stopped")
 }

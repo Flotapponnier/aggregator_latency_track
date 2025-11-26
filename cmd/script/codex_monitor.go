@@ -119,7 +119,7 @@ func connectCodexWebSocket(apiKey string) (*websocket.Conn, error) {
 		return nil, fmt.Errorf("expected connection_ack, got: %s", ackMsg.Type)
 	}
 
-	fmt.Println("   ✓ Connection acknowledged by Codex")
+	fmt.Println("Connection acknowledged by Codex")
 
 	return conn, nil
 }
@@ -318,14 +318,14 @@ func handleCodexWebSocketMessages(conn *websocket.Conn, config *Config) {
 }
 
 func runCodexMonitor(config *Config, stopChan <-chan struct{}) {
-	fmt.Println(" Starting Codex WebSocket monitor...")
-	fmt.Printf("   Monitoring %d chains with real-time GraphQL WebSocket\n", len(codexChains))
-	fmt.Printf("   Solana: onUnconfirmedEventsCreated (faster)\n")
-	fmt.Printf("   Others: onEventsCreated\n")
+	fmt.Println("Starting Codex WebSocket monitor...")
+	fmt.Printf("Monitoring %d chains with real-time GraphQL WebSocket\n", len(codexChains))
+	fmt.Printf("Solana: onUnconfirmedEventsCreated (faster)\n")
+	fmt.Printf("Others: onEventsCreated\n")
 	fmt.Println()
 
 	if config.CodexAPIKey == "" {
-		fmt.Println("⚠ CODEX_API_KEY not set in .env file. Skipping Codex monitor.")
+		fmt.Println("CODEX_API_KEY not set in .env file. Skipping Codex monitor.")
 		return
 	}
 
@@ -335,7 +335,7 @@ func runCodexMonitor(config *Config, stopChan <-chan struct{}) {
 	for {
 		select {
 		case <-stopChan:
-			fmt.Println("🛑 Codex monitor stopped")
+			fmt.Println("Codex monitor stopped")
 			return
 		default:
 			conn, err := connectCodexWebSocket(config.CodexAPIKey)
@@ -349,7 +349,7 @@ func runCodexMonitor(config *Config, stopChan <-chan struct{}) {
 				continue
 			}
 
-			fmt.Println("   ✓ Connected to Codex WebSocket")
+			fmt.Println("Connected to Codex WebSocket")
 
 			// Subscribe to all chains
 			allSubscribed := true
@@ -365,7 +365,7 @@ func runCodexMonitor(config *Config, stopChan <-chan struct{}) {
 				if chain.networkID == 1399811149 { // Solana
 					subscriptionType = "unconfirmed"
 				}
-				fmt.Printf("   ✓ Subscribed to %s pool (%s) [%s]\n", chain.chainName, chain.poolAddress, subscriptionType)
+				fmt.Printf("Subscribed to %s pool (%s) [%s]\n", chain.chainName, chain.poolAddress, subscriptionType)
 				time.Sleep(200 * time.Millisecond)
 			}
 

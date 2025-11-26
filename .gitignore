@@ -5,19 +5,26 @@ bin/
 # Logs
 monitor.log
 monitor.pid
+*.log
 
-# Environment
+# Environment variables
 .env
 
-# Dependencies
-go.sum
-
-# Deployment (Fly.io)
-fly.toml
+# Docker
 Dockerfile
 .dockerignore
+docker-compose.yml
+
+# Fly.io deployment
+fly.toml
 deploy.sh
 DEPLOYMENT.md
 listener-monad-testnet-deployment.yaml
-.github/workflows/fly-deploy.yml
 .github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

@@ -167,13 +167,13 @@ func handleCoinGeckoWebSocketMessages(conn *websocket.Conn, config *Config) {
 }
 
 func runGeckoTerminalMonitor(config *Config, stopChan <-chan struct{}) {
-	fmt.Println(" Starting CoinGecko WebSocket monitor...")
-	fmt.Printf("   Monitoring %d chains with real-time WebSocket\n", len(coinGeckoChains))
-	fmt.Printf("   Measuring TRUE indexation lag (WebSocket push timing)\n")
+	fmt.Println("Starting CoinGecko WebSocket monitor...")
+	fmt.Printf("Monitoring %d chains with real-time WebSocket\n", len(coinGeckoChains))
+	fmt.Printf("Measuring indexation lag (WebSocket push timing)\n")
 	fmt.Println()
 
 	if config.CoinGeckoAPIKey == "" {
-		fmt.Println("⚠ COINGECKO_API_KEY not set in .env file. Skipping CoinGecko monitor.")
+		fmt.Println("COINGECKO_API_KEY not set in .env file. Skipping CoinGecko monitor.")
 		return
 	}
 
@@ -183,7 +183,7 @@ func runGeckoTerminalMonitor(config *Config, stopChan <-chan struct{}) {
 	for {
 		select {
 		case <-stopChan:
-			fmt.Println(" CoinGecko monitor stopped")
+			fmt.Println("CoinGecko monitor stopped")
 			return
 		default:
 			conn, err := connectCoinGeckoWebSocket(config.CoinGeckoAPIKey)
@@ -197,7 +197,7 @@ func runGeckoTerminalMonitor(config *Config, stopChan <-chan struct{}) {
 				continue
 			}
 
-			fmt.Println("   ✓ Connected to CoinGecko WebSocket")
+			fmt.Println("Connected to CoinGecko WebSocket")
 
 			if err := subscribeToCoinGeckoChannel(conn); err != nil {
 				log.Printf("[COINGECKO] Failed to subscribe to channel: %v. Retrying in %v...", err, reconnectDelay)
@@ -209,7 +209,7 @@ func runGeckoTerminalMonitor(config *Config, stopChan <-chan struct{}) {
 				}
 				continue
 			}
-			fmt.Println("   ✓ Subscribed to OnchainTrade channel")
+			fmt.Println("Subscribed to OnchainTrade channel")
 
 			time.Sleep(500 * time.Millisecond)
 
@@ -230,7 +230,7 @@ func runGeckoTerminalMonitor(config *Config, stopChan <-chan struct{}) {
 				continue
 			}
 
-			fmt.Println("   ✓ Configured pools for monitoring:")
+			fmt.Println("Configured pools for monitoring:")
 			for _, chain := range coinGeckoChains {
 				fmt.Printf("     - %s (%s)\n", chain.chainName, chain.poolAddress)
 			}
