@@ -53,6 +53,18 @@ type CodexEvent struct {
 	Token1SwapValueUsd string `json:"token1SwapValueUsd"`
 }
 
+// For onUnconfirmedEventsCreated (Solana only)
+type UnconfirmedCodexEvent struct {
+	Address          string `json:"address"`
+	BlockHash        string `json:"blockHash"`
+	BlockNumber      int64  `json:"blockNumber"`
+	EventType        string `json:"eventType"`
+	Maker            string `json:"maker"`
+	NetworkID        int    `json:"networkId"`
+	Timestamp        int64  `json:"timestamp"`
+	TransactionHash  string `json:"transactionHash"`
+}
+
 type CodexEventData struct {
 	Data struct {
 		OnEventsCreated struct {
@@ -60,6 +72,11 @@ type CodexEventData struct {
 			NetworkID int          `json:"networkId"`
 			Events    []CodexEvent `json:"events"`
 		} `json:"onEventsCreated"`
+		OnUnconfirmedEventsCreated struct {
+			Address   string                  `json:"address"`
+			NetworkID int                     `json:"networkId"`
+			Events    []UnconfirmedCodexEvent `json:"events"`
+		} `json:"onUnconfirmedEventsCreated"`
 	} `json:"data"`
 }
 
@@ -107,34 +124,64 @@ func connectCodexWebSocket(apiKey string) (*websocket.Conn, error) {
 	return conn, nil
 }
 
-func subscribeToCodexPool(conn *websocket.Conn, poolAddress string, networkID int, subID string) error {
-	query := `subscription OnPoolEvents($address: String!, $networkId: Int!) {
-		onEventsCreated(address: $address, networkId: $networkId) {
-			address
-			networkId
-			events {
+func subscribeToCodexPool(conn *websocket.Conn, poolAddress string, networkID int, subID string, chainName string) error {
+	var query string
+	var variables map[string]interface{}
+
+	// Solana uses onUnconfirmedEventsCreated (lowest latency)
+	if networkID == 1399811149 { // Solana
+		query = `subscription OnUnconfirmedPoolEvents($id: String!) {
+			onUnconfirmedEventsCreated(id: $id) {
+				address
 				networkId
-				blockNumber
-				timestamp
-				transactionHash
-				eventType
-				token0Address
-				token1Address
-				token0SwapValueUsd
-				token1SwapValueUsd
+				events {
+					address
+					blockHash
+					blockNumber
+					eventType
+					maker
+					networkId
+					timestamp
+					transactionHash
+				}
 			}
+		}`
+
+		pairID := fmt.Sprintf("%s:%d", poolAddress, networkID)
+		variables = map[string]interface{}{
+			"id": pairID,
 		}
-	}`
+	} else { // BNB, Base, Monad
+		query = `subscription OnPoolEvents($address: String!, $networkId: Int!) {
+			onEventsCreated(address: $address, networkId: $networkId) {
+				address
+				networkId
+				events {
+					networkId
+					blockNumber
+					timestamp
+					transactionHash
+					eventType
+					token0Address
+					token1Address
+					token0SwapValueUsd
+					token1SwapValueUsd
+				}
+			}
+		}`
+
+		variables = map[string]interface{}{
+			"address":   poolAddress,
+			"networkId": networkID,
+		}
+	}
 
 	subscribeMsg := CodexSubscribe{
 		Type: "subscribe",
 		ID:   subID,
 		Payload: map[string]interface{}{
-			"query": query,
-			"variables": map[string]interface{}{
-				"address":   poolAddress,
-				"networkId": networkID,
-			},
+			"query":     query,
+			"variables": variables,
 		},
 	}
 
@@ -189,44 +236,70 @@ func handleCodexWebSocketMessages(conn *websocket.Conn, config *Config) {
 				continue
 			}
 
-			eventsOutput := eventData.Data.OnEventsCreated
-			if len(eventsOutput.Events) == 0 {
-				continue
+			// Try unconfirmed events first (Solana)
+			if len(eventData.Data.OnUnconfirmedEventsCreated.Events) > 0 {
+				for _, event := range eventData.Data.OnUnconfirmedEventsCreated.Events {
+					if event.EventType != "Swap" {
+						continue
+					}
+
+					if event.TransactionHash == "" {
+						continue
+					}
+
+					lagMs := calculateCodexLag(event.Timestamp, receiveTime)
+
+					chainName := getChainNameForCodex(event.NetworkID)
+					timestamp := receiveTime.Format("2006-01-02 15:04:05")
+
+					txHashShort := event.TransactionHash
+					if len(txHashShort) > 8 {
+						txHashShort = txHashShort[:8]
+					}
+
+					fmt.Printf("[CODEX][%s][%s][UNCONFIRMED] Tx: %s... | Block: %d | Lag: %dms\n",
+						timestamp,
+						chainName,
+						txHashShort,
+						event.BlockNumber,
+						lagMs,
+					)
+
+					RecordLatency("codex", chainName, float64(lagMs))
+				}
 			}
 
-			for _, event := range eventsOutput.Events {
-				if event.EventType != "Swap" {
-					continue
+			// Try confirmed events (BNB, Base, Monad)
+			if len(eventData.Data.OnEventsCreated.Events) > 0 {
+				for _, event := range eventData.Data.OnEventsCreated.Events {
+					if event.EventType != "Swap" {
+						continue
+					}
+
+					if event.TransactionHash == "" {
+						continue
+					}
+
+					lagMs := calculateCodexLag(event.Timestamp, receiveTime)
+
+					chainName := getChainNameForCodex(event.NetworkID)
+					timestamp := receiveTime.Format("2006-01-02 15:04:05")
+
+					txHashShort := event.TransactionHash
+					if len(txHashShort) > 8 {
+						txHashShort = txHashShort[:8]
+					}
+
+					fmt.Printf("[CODEX][%s][%s][CONFIRMED] Tx: %s... | Block: %d | Lag: %dms\n",
+						timestamp,
+						chainName,
+						txHashShort,
+						event.BlockNumber,
+						lagMs,
+					)
+
+					RecordLatency("codex", chainName, float64(lagMs))
 				}
-
-				if event.TransactionHash == "" {
-					continue
-				}
-
-				lagMs := calculateCodexLag(event.Timestamp, receiveTime)
-
-				chainName := getChainNameForCodex(event.NetworkID)
-				timestamp := receiveTime.Format("2006-01-02 15:04:05")
-				tradeTime := time.Unix(event.Timestamp, 0).Format("15:04:05.000")
-
-				txHashShort := event.TransactionHash
-				if len(txHashShort) > 8 {
-					txHashShort = txHashShort[:8]
-				}
-
-				fmt.Printf("\n[DEBUG] Raw timestamp: %d | Trade time parsed: %s | Receive time: %s | Lag: %dms\n",
-					event.Timestamp, tradeTime, timestamp, lagMs)
-
-				fmt.Printf("[CODEX][%s][%s] New swap! Tx: %s... | Block: %d | Trade time: %s | Lag: %dms\n",
-					timestamp,
-					chainName,
-					txHashShort,
-					event.BlockNumber,
-					tradeTime,
-					lagMs,
-				)
-
-				RecordLatency("codex", chainName, float64(lagMs))
 			}
 
 		case "error":
@@ -247,7 +320,8 @@ func handleCodexWebSocketMessages(conn *websocket.Conn, config *Config) {
 func runCodexMonitor(config *Config, stopChan <-chan struct{}) {
 	fmt.Println(" Starting Codex WebSocket monitor...")
 	fmt.Printf("   Monitoring %d chains with real-time GraphQL WebSocket\n", len(codexChains))
-	fmt.Printf("   Measuring TRUE indexation lag (WebSocket push timing)\n")
+	fmt.Printf("   Solana: onUnconfirmedEventsCreated (faster)\n")
+	fmt.Printf("   Others: onEventsCreated\n")
 	fmt.Println()
 
 	if config.CodexAPIKey == "" {
@@ -281,12 +355,17 @@ func runCodexMonitor(config *Config, stopChan <-chan struct{}) {
 			allSubscribed := true
 			for i, chain := range codexChains {
 				subID := fmt.Sprintf("sub_%d", i+1)
-				if err := subscribeToCodexPool(conn, chain.poolAddress, chain.networkID, subID); err != nil {
+				if err := subscribeToCodexPool(conn, chain.poolAddress, chain.networkID, subID, chain.chainName); err != nil {
 					log.Printf("[CODEX] Failed to subscribe to %s pool: %v. Will reconnect...", chain.chainName, err)
 					allSubscribed = false
 					break
 				}
-				fmt.Printf("   ✓ Subscribed to %s pool (%s)\n", chain.chainName, chain.poolAddress)
+
+				subscriptionType := "confirmed"
+				if chain.networkID == 1399811149 { // Solana
+					subscriptionType = "unconfirmed"
+				}
+				fmt.Printf("   ✓ Subscribed to %s pool (%s) [%s]\n", chain.chainName, chain.poolAddress, subscriptionType)
 				time.Sleep(200 * time.Millisecond)
 			}
 

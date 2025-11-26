@@ -1,6 +1,6 @@
 # 📊 Aggregator Latency Monitor
 
-Online dashboard available at : https://aggregator-latency-track.fly.dev/?orgId=1
+Online dashboard available at : https://aggregator-latency-track.fly.dev/d/aggregator_latency/aggregator-latency-monitor?orgId=1&refresh=5s
 
 Real-time monitoring dashboard for tracking blockchain data indexation latency across multiple aggregators and chains. Visualize how fast aggregators index on-chain trades with live Grafana dashboards.
 
