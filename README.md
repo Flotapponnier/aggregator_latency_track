@@ -2,7 +2,7 @@
 
 Real-time monitoring tool for tracking blockchain data indexation latency across multiple aggregators. Measures the time between on-chain events and API availability.
 
-**Live Dashboard**: https://aggregator-latency-track.fly.dev/d/aggregator_latency/aggregator-latency-monitor?orgId=1&refresh=5s
+**Live Dashboard**: https://aggregator-latency-track.fly.dev/
 
 ## How It Works
 
