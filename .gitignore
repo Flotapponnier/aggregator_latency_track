@@ -10,10 +10,9 @@ monitor.pid
 # Environment variables
 .env
 
-# Docker
+# Docker (deployment only)
 Dockerfile
 .dockerignore
-docker-compose.yml
 
 # Fly.io deployment
 fly.toml
