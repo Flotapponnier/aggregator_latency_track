@@ -4,7 +4,7 @@
 
 Real-time monitoring tool for tracking blockchain data indexation latency across multiple aggregators.
 
-**[Live Dashboard](https://aggregator-latency-track.fly.dev/)**
+**[Latency - Benchmark - Live Dashboard](https://aggregator-latency-track.fly.dev/)**
 
 </div>
 
