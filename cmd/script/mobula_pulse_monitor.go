@@ -9,13 +9,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 const (
 	mobulaPulseWSURL = "wss://pulse-v2-api.mobula.io"
 )
@@ -23,15 +16,15 @@ const (
 // Chains to monitor for new pools
 var pulseChains = []string{
 	"solana:solana",
-	"evm:56",  // BNB
+	"evm:56",   // BNB
 	"evm:8453", // Base
-	"evm:143", // Monad
+	"evm:143",  // Monad
 }
 
 type PulseSubscribeMessage struct {
-	Type          string        `json:"type"`
-	Authorization string        `json:"authorization"`
-	Payload       PulsePayload  `json:"payload"`
+	Type          string       `json:"type"`
+	Authorization string       `json:"authorization"`
+	Payload       PulsePayload `json:"payload"`
 }
 
 type PulsePayload struct {
