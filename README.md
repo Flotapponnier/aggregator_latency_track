@@ -1,17 +1,12 @@
-```
-    _                                    _
-   / \   __ _  __ _ _ __ ___  __ _  __ _| |_ ___  _ __
-  / _ \ / _` |/ _` | '__/ _ \/ _` |/ _` | __/ _ \| '__|
- / ___ \ (_| | (_| | | |  __/ (_| | (_| | || (_) | |
-/_/   \_\__, |\__, |_|  \___|\__, |\__,_|\__\___/|_|
-        |___/ |___/          |___/
+<div align="center">
 
-     LATENCY BENCHMARK - Track Data Indexation Speed
-```
+![Aggregator Latency Benchmark](./assets/logo.png)
 
-Real-time monitoring tool for tracking blockchain data indexation latency across multiple aggregators. Measures the time between on-chain events and API availability.
+Real-time monitoring tool for tracking blockchain data indexation latency across multiple aggregators.
 
-**Live Dashboard**: https://aggregator-latency-track.fly.dev/
+**[Live Dashboard](https://aggregator-latency-track.fly.dev/)**
+
+</div>
 
 ## How It Works
 
